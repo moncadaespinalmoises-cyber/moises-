@@ -1,0 +1,1031 @@
+---
+title: "Estadística Inferencial IS-241 — Propuesta Aplicativa Global"
+author: "UNADECA | Escuela de Ingeniería en Sistemas"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    number_sections: true
+    df_print: kable
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,        # Muestra el código
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 5
+)
+# Paquetes necesarios
+library(ggplot2)
+```
+
+---
+
+> **Profesor:** Dodanim Castillo Aráuz | **Materia:** IS-241 Estadística Inferencial  
+> **Instrucciones:** Esta propuesta aplicativa cubre TODOS los temas del cuatrimestre
+> y permite resolver cualquier caso modificando los parámetros de cada sección.
+
+---
+
+# REPASO DE CONCEPTOS — ESTADÍSTICA DESCRIPTIVA
+
+## Definiciones clave
+
+- **Variable aleatoria discreta:** Toma valores contables (ej. número de errores en código).  
+- **Variable aleatoria continua:** Toma cualquier valor en un intervalo (ej. tiempo de respuesta de un servidor).
+
+## Cálculo de medidas descriptivas
+
+Modifique el vector `datos` con sus propios valores:
+
+```{r descriptiva}
+# ─── DATOS DE ENTRADA — modifique aquí ───────────────────────
+datos <- c(12, 15, 14, 10, 18, 20, 14, 16, 15, 13, 17, 11)
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+n       <- length(datos)
+media   <- mean(datos)
+mediana <- median(datos)
+moda_tab <- table(datos)
+moda    <- as.numeric(names(moda_tab)[moda_tab == max(moda_tab)])
+var_m   <- var(datos)          # varianza muestral
+sd_m    <- sd(datos)           # desv. estándar muestral
+var_p   <- var(datos)*(n-1)/n  # varianza poblacional
+sd_p    <- sqrt(var_p)
+cv      <- sd_m / media * 100  # coeficiente de variación
+rango   <- max(datos) - min(datos)
+q1      <- quantile(datos, 0.25)
+q3      <- quantile(datos, 0.75)
+iqr     <- q3 - q1
+
+# Asimetría de Pearson
+asimetria <- 3 * (media - mediana) / sd_m
+
+# ─── RESULTADOS ───────────────────────────────────────────────
+cat("════════════════════════════════════════\n")
+cat("  ESTADÍSTICA DESCRIPTIVA\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  n = %d observaciones\n", n))
+cat(sprintf("  Mínimo / Máximo:  %.2f / %.2f\n", min(datos), max(datos)))
+cat(sprintf("  Rango:            %.4f\n", rango))
+cat("────────────────────────────────────────\n")
+cat("  TENDENCIA CENTRAL\n")
+cat(sprintf("  Media (X̄):        %.4f\n", media))
+cat(sprintf("  Mediana:          %.4f\n", mediana))
+cat(sprintf("  Moda:             %s\n", paste(moda, collapse=", ")))
+cat("────────────────────────────────────────\n")
+cat("  DISPERSIÓN\n")
+cat(sprintf("  Varianza muestral (s²):     %.4f\n", var_m))
+cat(sprintf("  Desv. est. muestral (s):    %.4f\n", sd_m))
+cat(sprintf("  Varianza poblacional (σ²):  %.4f\n", var_p))
+cat(sprintf("  Desv. est. poblacional (σ): %.4f\n", sd_p))
+cat(sprintf("  Coef. variación (CV%%):      %.2f%%\n", cv))
+cat("────────────────────────────────────────\n")
+cat("  POSICIÓN\n")
+cat(sprintf("  Q1 (25%%): %.4f | Q3 (75%%): %.4f | IQR: %.4f\n", q1, q3, iqr))
+cat("────────────────────────────────────────\n")
+cat("  ASIMETRÍA (Coef. Pearson)\n")
+cat(sprintf("  Asimetría: %.4f → %s\n", asimetria,
+    ifelse(abs(asimetria)<0.1,"Simétrica",
+    ifelse(asimetria>0,"Asimétrica (+) cola derecha","Asimétrica (-) cola izquierda"))))
+cat("════════════════════════════════════════\n")
+```
+
+## Gráficos descriptivos
+
+```{r graficos_desc}
+par(mfrow=c(1,2))
+
+# Histograma
+hist(datos, col="#2471a3", border="white",
+     main="Histograma", xlab="Valores", ylab="Frecuencia",
+     las=1)
+abline(v=media,   col="#e74c3c", lwd=2, lty=2)
+abline(v=mediana, col="#27ae60", lwd=2, lty=2)
+legend("topright", legend=c("Media","Mediana"),
+       col=c("#e74c3c","#27ae60"), lwd=2, lty=2, bty="n")
+
+# Boxplot
+boxplot(datos, col="#d4e6f1", border="#1a3a5c",
+        main="Diagrama de Caja", ylab="Valores",
+        notch=FALSE)
+```
+
+---
+
+# DISTRIBUCIÓN BINOMIAL
+
+## Teoría
+
+Una distribución binomial describe el número de éxitos en **n ensayos independientes**,
+donde la probabilidad de éxito en cada ensayo es **p** constante.
+
+**Propiedades:** Solo dos resultados posibles | p constante | Ensayos independientes | Mutuamente excluyentes
+
+$$P(X=x) = \binom{n}{x} p^x q^{n-x} = \frac{n!}{x!(n-x)!} \cdot p^x \cdot q^{n-x}$$
+
+$$\mu = n \cdot p \qquad \sigma^2 = n \cdot p \cdot q \qquad \sigma = \sqrt{n \cdot p \cdot q}$$
+
+## Ejemplo resuelto y calculador
+
+```{r binomial}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+n <- 12      # Número de ensayos
+p <- 0.80    # Probabilidad de éxito
+x <- 7       # Número de éxitos de interés
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+q      <- 1 - p
+mu_bin <- n * p
+var_bin <- n * p * q
+sd_bin  <- sqrt(var_bin)
+
+# Tipos de probabilidad
+P_igual        <- dbinom(x, n, p)
+P_menor_igual  <- pbinom(x, n, p)
+P_mayor_igual  <- 1 - pbinom(x-1, n, p)
+P_menor        <- pbinom(x-1, n, p)
+P_mayor        <- 1 - pbinom(x, n, p)
+
+# Tabla completa
+xs     <- 0:n
+probs  <- dbinom(xs, n, p)
+acum   <- pbinom(xs, n, p)
+
+cat("════════════════════════════════════════\n")
+cat(sprintf("  DISTRIBUCIÓN BINOMIAL B(n=%d, p=%.2f)\n", n, p))
+cat("════════════════════════════════════════\n")
+cat(sprintf("  q = 1-p = %.4f\n", q))
+cat(sprintf("  μ = n·p = %d × %.2f = %.4f\n", n, p, mu_bin))
+cat(sprintf("  σ² = n·p·q = %.4f\n", var_bin))
+cat(sprintf("  σ = √(n·p·q) = %.4f\n", sd_bin))
+cat("────────────────────────────────────────\n")
+cat(sprintf("  P(X = %d)  = %.6f\n", x, P_igual))
+cat(sprintf("  P(X ≤ %d)  = %.6f\n", x, P_menor_igual))
+cat(sprintf("  P(X ≥ %d)  = %.6f\n", x, P_mayor_igual))
+cat(sprintf("  P(X < %d)  = %.6f\n", x, P_menor))
+cat(sprintf("  P(X > %d)  = %.6f\n", x, P_mayor))
+cat("────────────────────────────────────────\n")
+cat("  Intervalo usual (μ ± 2σ):\n")
+cat(sprintf("  [%.2f,  %.2f]\n", max(0,mu_bin-2*sd_bin), min(n,mu_bin+2*sd_bin)))
+cat("════════════════════════════════════════\n")
+
+# Tabla de distribución
+tabla_bin <- data.frame(
+  x       = xs,
+  "P(X=x)"  = round(probs, 6),
+  "P(X≤x)"  = round(acum, 6),
+  "P(X≥x)"  = round(1 - pbinom(xs-1, n, p), 6),
+  check.names = FALSE
+)
+knitr::kable(tabla_bin, caption = "Tabla de distribución binomial completa",
+             align = "cccc")
+```
+
+## Gráfico de la distribución
+
+```{r graf_binomial}
+colores <- ifelse(xs == x, "#e74c3c", "#2471a3")
+barplot(probs, names.arg = xs, col = colores, border = "white",
+        main = paste0("Distribución Binomial  B(n=", n, ", p=", p, ")"),
+        xlab = "x (número de éxitos)", ylab = "P(X = x)",
+        las = 1)
+legend("topleft", legend = c(paste0("P(X=",x,") resaltado"), "Otras probabilidades"),
+       fill = c("#e74c3c","#2471a3"), bty="n")
+abline(v = (mu_bin/n*n), col = "#27ae60", lty = 2, lwd = 2)
+```
+
+---
+
+# DISTRIBUCIÓN NORMAL
+
+## Teoría
+
+La distribución normal (campana de Gauss) es continua y simétrica alrededor de μ.
+
+$$f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}$$
+
+**Estandarización:**
+$$Z = \frac{x - \mu}{\sigma}$$
+
+## Calculador: P(X ≤ x), P(X ≥ x), P(a ≤ X ≤ b)
+
+```{r normal}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+mu    <- 100    # Media poblacional
+sigma <- 15     # Desviación estándar
+
+# Caso 1: P(X ≤ x)
+x1 <- 110
+z1 <- (x1 - mu) / sigma
+P1 <- pnorm(z1)
+
+# Caso 2: P(X ≥ x)
+x2 <- 85
+z2 <- (x2 - mu) / sigma
+P2 <- 1 - pnorm(z2)
+
+# Caso 3: P(a ≤ X ≤ b)
+a <- 90; b <- 115
+za <- (a - mu)/sigma; zb <- (b - mu)/sigma
+P3 <- pnorm(zb) - pnorm(za)
+
+# Caso 4: Valor x dado probabilidad (cuantil)
+prob_buscada <- 0.95
+z_cuantil <- qnorm(prob_buscada)
+x_cuantil  <- mu + z_cuantil * sigma
+
+cat("════════════════════════════════════════\n")
+cat(sprintf("  DISTRIBUCIÓN NORMAL N(μ=%.1f, σ=%.1f)\n", mu, sigma))
+cat("════════════════════════════════════════\n")
+cat(sprintf("  Caso 1: P(X ≤ %.1f)\n", x1))
+cat(sprintf("    Z = (%.1f-%.1f)/%.1f = %.4f\n", x1, mu, sigma, z1))
+cat(sprintf("    P(X ≤ %.1f) = %.6f = %.2f%%\n\n", x1, P1, P1*100))
+
+cat(sprintf("  Caso 2: P(X ≥ %.1f)\n", x2))
+cat(sprintf("    Z = (%.1f-%.1f)/%.1f = %.4f\n", x2, mu, sigma, z2))
+cat(sprintf("    P(X ≥ %.1f) = %.6f = %.2f%%\n\n", x2, P2, P2*100))
+
+cat(sprintf("  Caso 3: P(%.1f ≤ X ≤ %.1f)\n", a, b))
+cat(sprintf("    Za=%.4f, Zb=%.4f\n", za, zb))
+cat(sprintf("    Probabilidad = %.6f = %.2f%%\n\n", P3, P3*100))
+
+cat(sprintf("  Caso 4: x tal que P(X ≤ x) = %.2f\n", prob_buscada))
+cat(sprintf("    Z = %.4f → x = μ+Z·σ = %.4f\n", z_cuantil, x_cuantil))
+cat("════════════════════════════════════════\n")
+```
+
+## Gráficos — Áreas bajo la curva normal
+
+```{r graf_normal}
+par(mfrow=c(1,2))
+
+x_seq <- seq(mu - 4*sigma, mu + 4*sigma, length.out=1000)
+y_seq <- dnorm(x_seq, mu, sigma)
+
+# Gráfico 1: P(X ≤ x1)
+plot(x_seq, y_seq, type="l", lwd=2, col="#1a3a5c",
+     main=paste0("P(X ≤ ", x1, ") = ", round(P1,4)),
+     xlab="x", ylab="f(x)", las=1)
+x_fill <- x_seq[x_seq <= x1]
+y_fill <- dnorm(x_fill, mu, sigma)
+polygon(c(x_fill, rev(x_fill)), c(y_fill, rep(0,length(y_fill))),
+        col="#e74c3c88", border=NA)
+abline(v=x1, col="#e74c3c", lwd=2, lty=2)
+
+# Gráfico 2: P(a ≤ X ≤ b)
+plot(x_seq, y_seq, type="l", lwd=2, col="#1a3a5c",
+     main=paste0("P(", a, " ≤ X ≤ ", b, ") = ", round(P3,4)),
+     xlab="x", ylab="f(x)", las=1)
+x_fill2 <- x_seq[x_seq >= a & x_seq <= b]
+y_fill2 <- dnorm(x_fill2, mu, sigma)
+polygon(c(x_fill2, rev(x_fill2)), c(y_fill2, rep(0,length(y_fill2))),
+        col="#2471a388", border=NA)
+abline(v=c(a,b), col="#2471a3", lwd=2, lty=2)
+```
+
+---
+
+# PRUEBA DE HIPÓTESIS
+
+## Aspectos básicos
+
+| Concepto | Descripción |
+|---|---|
+| **H₀ (hipótesis nula)** | Lo que se desea probar/rechazar |
+| **H₁ (hipótesis alternativa)** | Contradice H₀ |
+| **Error Tipo I (α)** | Rechazar H₀ siendo verdadera |
+| **Error Tipo II (β)** | Aceptar H₀ siendo falsa |
+| **p-valor** | Probabilidad de obtener el resultado si H₀ fuera cierta |
+
+**Regla de decisión:** Si |Z_calc| > Z_crítico → Rechazar H₀
+
+## Caso 1 — Prueba Z para una media (σ conocida)
+
+$$Z = \frac{\bar{X} - \mu_0}{\sigma_{\bar{x}}} \qquad \text{donde} \quad \sigma_{\bar{x}} = \frac{\sigma}{\sqrt{n}}$$
+
+```{r ph_media_z}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+mu_0  <- 100    # Media hipotética (H₀)
+xbar  <- 102    # Media muestral
+sigma_z <- 10   # Desviación estándar poblacional (conocida)
+n_z   <- 400    # Tamaño de muestra
+alfa_z <- 0.05  # Nivel de significación
+cola_z <- "dos" # "dos", "derecha", "izquierda"
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+sigma_xbar <- sigma_z / sqrt(n_z)
+Z_calc     <- (xbar - mu_0) / sigma_xbar
+Z_crit     <- switch(cola_z,
+  "dos"      = qnorm(1 - alfa_z/2),
+  "derecha"  = qnorm(1 - alfa_z),
+  "izquierda"= qnorm(alfa_z)
+)
+p_valor_z <- switch(cola_z,
+  "dos"      = 2 * pnorm(-abs(Z_calc)),
+  "derecha"  = 1 - pnorm(Z_calc),
+  "izquierda"= pnorm(Z_calc)
+)
+H1_texto <- switch(cola_z,
+  "dos"="μ ≠ μ₀","derecha"="μ > μ₀","izquierda"="μ < μ₀")
+decision_z <- switch(cola_z,
+  "dos"      = if(abs(Z_calc) > Z_crit) "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "derecha"  = if(Z_calc > Z_crit)      "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "izquierda"= if(Z_calc < Z_crit)      "RECHAZAR H₀" else "NO RECHAZAR H₀"
+)
+
+cat("════════════════════════════════════════\n")
+cat("  PRUEBA Z — UNA MEDIA (σ conocida)\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  H₀: μ = %.4f\n", mu_0))
+cat(sprintf("  H₁: %s\n", H1_texto))
+cat(sprintf("  α = %.3f | Tipo de prueba: %s\n", alfa_z, cola_z))
+cat("────────────────────────────────────────\n")
+cat(sprintf("  σ_x̄ = σ/√n = %.4f/√%d = %.6f\n", sigma_z, n_z, sigma_xbar))
+cat(sprintf("  Z_calculado = (%.4f - %.4f) / %.6f = %.4f\n",
+            xbar, mu_0, sigma_xbar, Z_calc))
+cat(sprintf("  Z_crítico   = ±%.4f\n", abs(Z_crit)))
+cat(sprintf("  p-valor     = %.6f\n", p_valor_z))
+cat("────────────────────────────────────────\n")
+cat(sprintf("  DECISIÓN: %s\n", decision_z))
+cat("════════════════════════════════════════\n")
+```
+
+## Gráfico — Región de rechazo (prueba Z)
+
+```{r graf_ph_z}
+x_range <- seq(-4, 4, 0.01)
+y_range <- dnorm(x_range)
+plot(x_range, y_range, type="l", lwd=2, col="#1a3a5c",
+     main=paste0("Prueba Z | Z_calc=",round(Z_calc,4)," | Decisión: ",decision_z),
+     xlab="Z", ylab="f(Z)", las=1)
+
+# Región de rechazo
+if(cola_z == "dos") {
+  x_rej_r <- x_range[x_range >= abs(Z_crit)]
+  x_rej_l <- x_range[x_range <= -abs(Z_crit)]
+  polygon(c(x_rej_r, rev(x_rej_r)), c(dnorm(x_rej_r), rep(0,length(x_rej_r))),
+          col="#e74c3c88", border=NA)
+  polygon(c(x_rej_l, rev(x_rej_l)), c(dnorm(x_rej_l), rep(0,length(x_rej_l))),
+          col="#e74c3c88", border=NA)
+  abline(v=c(-abs(Z_crit), abs(Z_crit)), col="#e74c3c", lty=2, lwd=1.5)
+} else if (cola_z == "derecha") {
+  x_rej <- x_range[x_range >= Z_crit]
+  polygon(c(x_rej, rev(x_rej)), c(dnorm(x_rej), rep(0,length(x_rej))),
+          col="#e74c3c88", border=NA)
+  abline(v=Z_crit, col="#e74c3c", lty=2, lwd=1.5)
+} else {
+  x_rej <- x_range[x_range <= Z_crit]
+  polygon(c(x_rej, rev(x_rej)), c(dnorm(x_rej), rep(0,length(x_rej))),
+          col="#e74c3c88", border=NA)
+  abline(v=Z_crit, col="#e74c3c", lty=2, lwd=1.5)
+}
+abline(v=Z_calc, col=ifelse(decision_z=="RECHAZAR H₀","#c0392b","#27ae60"),
+       lwd=2.5)
+text(Z_calc, max(y_range)*0.85, paste0("Z_calc\n",round(Z_calc,4)),
+     col=ifelse(decision_z=="RECHAZAR H₀","#c0392b","#27ae60"), font=2, cex=0.85)
+legend("topright", legend=c("Z calculado","Región de rechazo"),
+       col=c(ifelse(decision_z=="RECHAZAR H₀","#c0392b","#27ae60"),"#e74c3c"),
+       lwd=c(2,8), bty="n")
+```
+
+## Caso 2 — Prueba t para una media (σ desconocida, n < 30)
+
+$$t = \frac{\bar{X} - \mu_0}{s/\sqrt{n}} \qquad gl = n-1$$
+
+```{r ph_media_t}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+mu_0t  <- 104   # Media hipotética H₀
+xbar_t <- 102   # Media muestral
+s_t    <- 8     # Desviación estándar muestral
+n_t    <- 36    # Tamaño de muestra (puede ser <30 o ≥30)
+alfa_t <- 0.05  # Nivel de significación
+cola_t <- "dos" # "dos", "derecha", "izquierda"
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+gl_t    <- n_t - 1
+se_t    <- s_t / sqrt(n_t)
+t_calc  <- (xbar_t - mu_0t) / se_t
+t_crit  <- switch(cola_t,
+  "dos"      = qt(1-alfa_t/2, gl_t),
+  "derecha"  = qt(1-alfa_t, gl_t),
+  "izquierda"= qt(alfa_t, gl_t)
+)
+p_val_t <- switch(cola_t,
+  "dos"      = 2*pt(-abs(t_calc), gl_t),
+  "derecha"  = 1-pt(t_calc, gl_t),
+  "izquierda"= pt(t_calc, gl_t)
+)
+decision_t <- switch(cola_t,
+  "dos"      = if(abs(t_calc)>t_crit) "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "derecha"  = if(t_calc>t_crit)      "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "izquierda"= if(t_calc<t_crit)      "RECHAZAR H₀" else "NO RECHAZAR H₀"
+)
+
+cat("════════════════════════════════════════\n")
+cat("  PRUEBA t — UNA MEDIA (σ desconocida)\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  H₀: μ = %.4f\n", mu_0t))
+cat(sprintf("  α = %.3f | gl = n-1 = %d\n", alfa_t, gl_t))
+cat(sprintf("  SE = s/√n = %.4f/√%d = %.6f\n", s_t, n_t, se_t))
+cat(sprintf("  t_calculado = %.4f\n", t_calc))
+cat(sprintf("  t_crítico   = ±%.4f  (gl=%d)\n", abs(t_crit), gl_t))
+cat(sprintf("  p-valor     = %.6f\n", p_val_t))
+cat(sprintf("  DECISIÓN: %s\n", decision_t))
+cat("════════════════════════════════════════\n")
+```
+
+## Caso 3 — Prueba para una proporción
+
+$$Z = \frac{p - P}{\sigma_p} \qquad \sigma_p = \sqrt{\frac{P \cdot Q}{n}}$$
+
+```{r ph_proporcion}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+P_pob   <- 0.32   # Proporción poblacional H₀
+p_mues  <- 0.26   # Proporción muestral observada
+n_pr    <- 400    # Tamaño de muestra
+alfa_pr <- 0.05   # Nivel de significación
+cola_pr <- "dos"  # "dos", "derecha", "izquierda"
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+Q_pob    <- 1 - P_pob
+sigma_p  <- sqrt(P_pob * Q_pob / n_pr)
+Z_pr     <- (p_mues - P_pob) / sigma_p
+Z_crit_pr <- switch(cola_pr,
+  "dos"="dos","derecha"=qnorm(1-alfa_pr),"izquierda"=qnorm(alfa_pr))
+Z_crit_pr_val <- switch(cola_pr,
+  "dos"=qnorm(1-alfa_pr/2),"derecha"=qnorm(1-alfa_pr),"izquierda"=qnorm(alfa_pr))
+p_val_pr <- switch(cola_pr,
+  "dos"=2*pnorm(-abs(Z_pr)),"derecha"=1-pnorm(Z_pr),"izquierda"=pnorm(Z_pr))
+decision_pr <- switch(cola_pr,
+  "dos"      = if(abs(Z_pr)>Z_crit_pr_val) "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "derecha"  = if(Z_pr>Z_crit_pr_val)      "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "izquierda"= if(Z_pr<Z_crit_pr_val)      "RECHAZAR H₀" else "NO RECHAZAR H₀"
+)
+
+cat("════════════════════════════════════════\n")
+cat("  PRUEBA Z — UNA PROPORCIÓN\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  H₀: P = %.4f | Q = %.4f\n", P_pob, Q_pob))
+cat(sprintf("  p (muestral) = %.4f | n = %d\n", p_mues, n_pr))
+cat(sprintf("  σ_p = √(P·Q/n) = %.6f\n", sigma_p))
+cat(sprintf("  Z_calculado = (%.4f - %.4f) / %.6f = %.4f\n",
+            p_mues, P_pob, sigma_p, Z_pr))
+cat(sprintf("  Z_crítico   = ±%.4f\n", abs(Z_crit_pr_val)))
+cat(sprintf("  p-valor     = %.6f\n", p_val_pr))
+cat(sprintf("  DECISIÓN: %s\n", decision_pr))
+cat("════════════════════════════════════════\n")
+```
+
+## Caso 4 — Diferencia de medias (dos muestras)
+
+$$Z = \frac{\bar{X}_1 - \bar{X}_2}{\sigma_{\Delta\bar{x}}} \qquad \sigma_{\Delta\bar{x}} = \sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}$$
+
+```{r ph_dos_medias}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+x1_dm <- 68; s1_dm <- 12; n1_dm <- 40
+x2_dm <- 65; s2_dm <- 14; n2_dm <- 50
+alfa_dm <- 0.05; cola_dm <- "dos"
+
+sigma_delta <- sqrt(s1_dm^2/n1_dm + s2_dm^2/n2_dm)
+Z_dm   <- (x1_dm - x2_dm) / sigma_delta
+Zcr_dm <- switch(cola_dm,"dos"=qnorm(1-alfa_dm/2),"derecha"=qnorm(1-alfa_dm),"izquierda"=qnorm(alfa_dm))
+pv_dm  <- switch(cola_dm,"dos"=2*pnorm(-abs(Z_dm)),"derecha"=1-pnorm(Z_dm),"izquierda"=pnorm(Z_dm))
+dec_dm <- switch(cola_dm,
+  "dos"      = if(abs(Z_dm)>Zcr_dm) "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "derecha"  = if(Z_dm>Zcr_dm)      "RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "izquierda"= if(Z_dm<Zcr_dm)      "RECHAZAR H₀" else "NO RECHAZAR H₀"
+)
+
+cat("════════════════════════════════════════\n")
+cat("  PRUEBA Z — DIFERENCIA DE MEDIAS\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  Muestra 1: X̄₁=%.2f, s₁=%.2f, n₁=%d\n", x1_dm, s1_dm, n1_dm))
+cat(sprintf("  Muestra 2: X̄₂=%.2f, s₂=%.2f, n₂=%d\n", x2_dm, s2_dm, n2_dm))
+cat(sprintf("  σ_ΔX̄ = √(s₁²/n₁+s₂²/n₂) = %.6f\n", sigma_delta))
+cat(sprintf("  Z_calculado = %.4f\n", Z_dm))
+cat(sprintf("  Z_crítico   = ±%.4f\n", abs(Zcr_dm)))
+cat(sprintf("  p-valor     = %.6f\n", pv_dm))
+cat(sprintf("  DECISIÓN: %s\n", dec_dm))
+cat("════════════════════════════════════════\n")
+```
+
+## Caso 5 — Diferencia de proporciones
+
+$$Z = \frac{p_1 - p_2}{\sigma_{\Delta p}} \qquad \sigma_{\Delta p} = \sqrt{\bar{p}\bar{q}\left(\frac{1}{n_1}+\frac{1}{n_2}\right)}$$
+
+```{r ph_dos_proporciones}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+p1_dp <- 0.65; n1_dp <- 200
+p2_dp <- 0.60; n2_dp <- 300
+alfa_dp <- 0.02; cola_dp <- "dos"
+
+p_pond <- (p1_dp*n1_dp + p2_dp*n2_dp)/(n1_dp+n2_dp)
+q_pond <- 1 - p_pond
+sigma_dp <- sqrt(p_pond*q_pond*(1/n1_dp + 1/n2_dp))
+Z_dp   <- (p1_dp - p2_dp) / sigma_dp
+Zcr_dp <- switch(cola_dp,"dos"=qnorm(1-alfa_dp/2),"derecha"=qnorm(1-alfa_dp),"izquierda"=qnorm(alfa_dp))
+pv_dp  <- switch(cola_dp,"dos"=2*pnorm(-abs(Z_dp)),"derecha"=1-pnorm(Z_dp),"izquierda"=pnorm(Z_dp))
+dec_dp <- switch(cola_dp,
+  "dos"=if(abs(Z_dp)>Zcr_dp)"RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "derecha"=if(Z_dp>Zcr_dp)"RECHAZAR H₀" else "NO RECHAZAR H₀",
+  "izquierda"=if(Z_dp<Zcr_dp)"RECHAZAR H₀" else "NO RECHAZAR H₀"
+)
+
+cat("════════════════════════════════════════\n")
+cat("  PRUEBA Z — DIFERENCIA DE PROPORCIONES\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  p₁=%.4f, n₁=%d  |  p₂=%.4f, n₂=%d\n", p1_dp, n1_dp, p2_dp, n2_dp))
+cat(sprintf("  p̄ ponderada = %.4f,  q̄ = %.4f\n", p_pond, q_pond))
+cat(sprintf("  σ_Δp = %.6f\n", sigma_dp))
+cat(sprintf("  Z_calculado = %.4f\n", Z_dp))
+cat(sprintf("  Z_crítico   = ±%.4f\n", abs(Zcr_dp)))
+cat(sprintf("  p-valor     = %.6f\n", pv_dp))
+cat(sprintf("  DECISIÓN: %s\n", dec_dp))
+cat("════════════════════════════════════════\n")
+```
+
+---
+
+# CHI-CUADRADO (χ²)
+
+## Teoría
+
+$$\chi^2 = \sum \frac{(O_i - E_i)^2}{E_i}$$
+
+- **Bondad de ajuste:** Comparar distribución observada vs teórica esperada.
+- **Tabla de contingencia:** Probar independencia entre dos variables.
+- **Homogeneidad:** Verificar si varias muestras provienen de la misma población.
+
+**Grados de libertad:** gl = k−1 (bondad) | gl = (F-1)(C-1) (contingencia)
+
+## Caso 1 — Bondad de ajuste
+
+```{r chi_bondad}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+observadas <- c(16, 10, 15, 18, 14, 17)  # Frecuencias observadas
+# Probabilidades esperadas (uniforme si se deja vacío)
+probs_esp  <- rep(1/6, 6)                 # Distribución uniforme
+alfa_chi_b <- 0.05
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+n_chi  <- sum(observadas)
+k_chi  <- length(observadas)
+esperadas <- n_chi * probs_esp
+chi2_b <- sum((observadas - esperadas)^2 / esperadas)
+gl_b   <- k_chi - 1
+chi_crit_b <- qchisq(1 - alfa_chi_b, gl_b)
+pval_b     <- 1 - pchisq(chi2_b, gl_b)
+dec_b      <- if(chi2_b > chi_crit_b) "RECHAZAR H₀" else "NO RECHAZAR H₀"
+
+cat("════════════════════════════════════════\n")
+cat("  CHI-CUADRADO — BONDAD DE AJUSTE\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  n=%d | k=%d | gl=k-1=%d | α=%.3f\n", n_chi, k_chi, gl_b, alfa_chi_b))
+cat("  Tabla de cálculo:\n")
+cat("  Cat | Obs(O) | Esp(E) | (O-E)²/E\n")
+for(i in 1:k_chi)
+  cat(sprintf("  %3d | %6.1f | %6.2f | %9.4f\n",
+              i, observadas[i], esperadas[i], (observadas[i]-esperadas[i])^2/esperadas[i]))
+cat("────────────────────────────────────────\n")
+cat(sprintf("  χ²_calculado = %.4f\n", chi2_b))
+cat(sprintf("  χ²_crítico   = %.4f  (gl=%d, α=%.3f)\n", chi_crit_b, gl_b, alfa_chi_b))
+cat(sprintf("  p-valor      = %.6f\n", pval_b))
+cat(sprintf("  DECISIÓN: %s\n", dec_b))
+cat("════════════════════════════════════════\n")
+
+# Tabla resultado
+df_chi_b <- data.frame(
+  Categoría = paste0("Cat ", 1:k_chi),
+  Observado = observadas,
+  Esperado  = round(esperadas, 2),
+  "(O-E)²/E"= round((observadas-esperadas)^2/esperadas, 4),
+  check.names = FALSE
+)
+knitr::kable(df_chi_b, caption="Tabla de bondad de ajuste")
+```
+
+## Caso 2 — Tabla de contingencia (independencia)
+
+```{r chi_contingencia}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+# Ingrese la tabla como matriz (filas x columnas)
+mat_obs <- matrix(c(36, 52,
+                    26, 86), nrow=2, byrow=TRUE,
+                  dimnames=list(c("Masculino","Femenino"),
+                                c("Técnicas","Humanísticas")))
+alfa_chi_c <- 0.05
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+nF <- nrow(mat_obs); nC <- ncol(mat_obs)
+n_total_c <- sum(mat_obs)
+tot_filas_c <- rowSums(mat_obs)
+tot_cols_c  <- colSums(mat_obs)
+mat_esp_c   <- outer(tot_filas_c, tot_cols_c) / n_total_c
+chi2_c  <- sum((mat_obs - mat_esp_c)^2 / mat_esp_c)
+gl_c    <- (nF-1)*(nC-1)
+chi_cr_c <- qchisq(1-alfa_chi_c, gl_c)
+pval_c   <- 1 - pchisq(chi2_c, gl_c)
+dec_c    <- if(chi2_c>chi_cr_c) "RECHAZAR H₀" else "NO RECHAZAR H₀"
+
+cat("════════════════════════════════════════\n")
+cat("  CHI-CUADRADO — TABLA DE CONTINGENCIA\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  Tabla %dx%d | n=%d | gl=(F-1)(C-1)=%d\n",
+            nF, nC, n_total_c, gl_c))
+cat("  Frecuencias OBSERVADAS:\n")
+print(mat_obs)
+cat("  Frecuencias ESPERADAS:\n")
+print(round(mat_esp_c, 2))
+cat("────────────────────────────────────────\n")
+cat(sprintf("  χ²_calculado = %.4f\n", chi2_c))
+cat(sprintf("  χ²_crítico   = %.4f  (gl=%d, α=%.3f)\n", chi_cr_c, gl_c, alfa_chi_c))
+cat(sprintf("  p-valor      = %.6f\n", pval_c))
+cat(sprintf("  DECISIÓN: %s\n", dec_c))
+cat(ifelse(dec_c=="RECHAZAR H₀",
+    "  → Las variables NO son independientes.\n",
+    "  → Las variables son independientes.\n"))
+cat("════════════════════════════════════════\n")
+```
+
+## Gráfico distribución chi-cuadrado
+
+```{r graf_chi}
+x_chi <- seq(0, max(chi2_c*1.5, chi_cr_c*1.5, 15), length.out=500)
+y_chi <- dchisq(x_chi, gl_c)
+plot(x_chi, y_chi, type="l", lwd=2, col="#1a3a5c",
+     main=paste0("Distribución χ²  (gl=",gl_c,")  — Decisión: ",dec_c),
+     xlab="χ²", ylab="Densidad", las=1)
+x_rej <- x_chi[x_chi >= chi_cr_c]
+polygon(c(x_rej, rev(x_rej)), c(dchisq(x_rej,gl_c), rep(0,length(x_rej))),
+        col="#e74c3c88", border=NA)
+abline(v=chi2_c, col=if(chi2_c>chi_cr_c)"#c0392b" else "#27ae60", lwd=2.5)
+abline(v=chi_cr_c, col="#e74c3c", lwd=1.5, lty=2)
+text(chi2_c, max(y_chi)*0.7, paste0("χ²_calc\n",round(chi2_c,3)),
+     col="#1a3a5c", font=2, cex=0.85)
+legend("topright", legend=c("χ²_calc","χ²_crit","Región de rechazo"),
+       col=c(if(chi2_c>chi_cr_c)"#c0392b" else "#27ae60","#e74c3c","#e74c3c"),
+       lwd=c(2.5,1.5,8), lty=c(1,2,1), bty="n")
+```
+
+## Caso 3 — Prueba de homogeneidad
+
+```{r chi_homogeneidad}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+mat_hom <- matrix(c(57, 80, 43,
+                    57, 58, 20,
+                    56, 45, 24,
+                    45, 22, 33), nrow=4, byrow=TRUE,
+                  dimnames=list(c("Primero","Segundo","Tercero","Cuarto"),
+                                c("Curiosidad","Casual","Moderado-Intenso")))
+alfa_hom <- 0.05
+
+# ─── CÁLCULOS (mismo procedimiento que contingencia) ──────────
+n_hom    <- sum(mat_hom)
+esp_hom  <- outer(rowSums(mat_hom), colSums(mat_hom)) / n_hom
+chi2_hom <- sum((mat_hom - esp_hom)^2 / esp_hom)
+gl_hom   <- (nrow(mat_hom)-1)*(ncol(mat_hom)-1)
+chi_cr_hom <- qchisq(1-alfa_hom, gl_hom)
+pval_hom <- 1 - pchisq(chi2_hom, gl_hom)
+dec_hom  <- if(chi2_hom>chi_cr_hom) "RECHAZAR H₀" else "NO RECHAZAR H₀"
+
+cat("════════════════════════════════════════\n")
+cat("  CHI-CUADRADO — PRUEBA DE HOMOGENEIDAD\n")
+cat("════════════════════════════════════════\n")
+print(mat_hom)
+cat(sprintf("\n  χ²_calculado = %.4f\n", chi2_hom))
+cat(sprintf("  χ²_crítico   = %.4f  (gl=%d)\n", chi_cr_hom, gl_hom))
+cat(sprintf("  p-valor      = %.6f\n", pval_hom))
+cat(sprintf("  DECISIÓN: %s\n", dec_hom))
+cat("════════════════════════════════════════\n")
+```
+
+---
+
+# REGRESIÓN Y CORRELACIÓN
+
+## Teoría
+
+| Concepto | Fórmula |
+|---|---|
+| Pendiente b | $b = \frac{n\sum XY - \sum X\sum Y}{n\sum X^2 - (\sum X)^2}$ |
+| Intercepto a | $a = \bar{Y} - b\bar{X}$ |
+| Correlación r | $r = \frac{n\sum XY - \sum X\sum Y}{\sqrt{[n\sum X^2-(\sum X)^2][n\sum Y^2-(\sum Y)^2]}}$ |
+| Coeficiente de determinación | $R^2 = r^2$ |
+
+## Regresión lineal simple
+
+```{r regresion_lineal}
+# ─── DATOS — modifique aquí ───────────────────────────────────
+X <- c(1,  2,  3,  4,  5,  6,  7,  8,  9, 10)
+Y <- c(2.1,3.9,6.2,8.0,9.8,11.9,13.5,15.8,17.3,19.2)
+x_pred <- 7.5   # Valor de X para predicción
+
+# ─── CÁLCULOS ─────────────────────────────────────────────────
+n_r  <- length(X)
+sum_x  <- sum(X);  sum_y  <- sum(Y)
+sum_x2 <- sum(X^2); sum_y2 <- sum(Y^2)
+sum_xy <- sum(X*Y)
+x_bar_r <- mean(X); y_bar_r <- mean(Y)
+
+b_reg <- (n_r*sum_xy - sum_x*sum_y) / (n_r*sum_x2 - sum_x^2)
+a_reg <- y_bar_r - b_reg * x_bar_r
+
+r_pearson <- (n_r*sum_xy - sum_x*sum_y) /
+             sqrt((n_r*sum_x2-sum_x^2)*(n_r*sum_y2-sum_y^2))
+r2_reg <- r_pearson^2
+
+Y_pred <- a_reg + b_reg * X
+residuos <- Y - Y_pred
+SSE <- sum(residuos^2)
+SST <- sum((Y - y_bar_r)^2)
+R2_mod <- 1 - SSE/SST
+
+y_new <- a_reg + b_reg * x_pred
+
+fuerza <- ifelse(abs(r_pearson)>=0.9, "Muy fuerte",
+          ifelse(abs(r_pearson)>=0.7, "Fuerte",
+          ifelse(abs(r_pearson)>=0.5, "Moderada",
+          ifelse(abs(r_pearson)>=0.3, "Debil", "Muy debil"))))
+
+cat("════════════════════════════════════════\n")
+cat("  REGRESIÓN LINEAL SIMPLE\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  n = %d pares | X̄=%.4f | Ȳ=%.4f\n", n_r, x_bar_r, y_bar_r))
+cat("────────────────────────────────────────\n")
+cat("  SUMAS:\n")
+cat(sprintf("  ΣX=%.2f | ΣY=%.2f | ΣX²=%.2f\n", sum_x, sum_y, sum_x2))
+cat(sprintf("  ΣY²=%.2f | ΣXY=%.2f\n", sum_y2, sum_xy))
+cat("────────────────────────────────────────\n")
+cat("  CORRELACIÓN:\n")
+cat(sprintf("  r = %.6f (%s %s)\n", r_pearson, fuerza,
+            ifelse(r_pearson>0, "Positiva", "Negativa")))
+cat(sprintf("  r² = %.6f (%.2f%% de variabilidad explicada)\n",
+            r2_reg, r2_reg*100))
+cat("────────────────────────────────────────\n")
+cat("  ECUACIÓN DE REGRESIÓN:\n")
+cat(sprintf("  b = %.6f\n", b_reg))
+cat(sprintf("  a = %.6f\n", a_reg))
+cat(sprintf("  Ŷ = %.4f + %.4f·X\n", a_reg, b_reg))
+cat("────────────────────────────────────────\n")
+cat(sprintf("  R² del modelo = %.4f\n", R2_mod))
+cat(sprintf("  SSE = %.4f\n", SSE))
+cat("────────────────────────────────────────\n")
+cat(sprintf("  PREDICCIÓN: Para X=%.2f → Ŷ=%.4f\n", x_pred, y_new))
+cat("════════════════════════════════════════\n")
+
+# Tabla de valores
+df_reg <- data.frame(i=1:n_r, X=X, Y=Y,
+                     "Ŷ"=round(Y_pred,4),
+                     "Residuo (Y-Ŷ)"=round(residuos,4),
+                     "(Y-Ŷ)²"=round(residuos^2,4),
+                     check.names=FALSE)
+knitr::kable(df_reg, caption="Tabla de regresión lineal")
+```
+
+## Gráfico de regresión
+
+```{r graf_regresion}
+x_line <- seq(min(X)*0.9, max(X)*1.1, length.out=200)
+y_line <- a_reg + b_reg * x_line
+
+plot(X, Y, pch=19, col="#1a3a5c", cex=1.3,
+     main=paste0("Regresión Lineal  |  r=",round(r_pearson,4),
+                 "  |  Ŷ=",round(a_reg,3),"+",round(b_reg,3),"·X"),
+     xlab="X", ylab="Y", las=1)
+lines(x_line, y_line, col="#e74c3c", lwd=2.5)
+points(x_pred, y_new, pch=23, bg="#27ae60", col="#27ae60", cex=2)
+text(x_pred, y_new, paste0("Pred: (",x_pred,", ",round(y_new,2),")"),
+     pos=3, col="#27ae60", font=2, cex=0.85)
+for(i in 1:n_r)
+  segments(X[i], Y[i], X[i], Y_pred[i], col="#e74c3c44", lwd=1)
+legend("topleft", legend=c("Datos","Recta de regresión","Predicción","Residuos"),
+       col=c("#1a3a5c","#e74c3c","#27ae60","#e74c3c44"),
+       pch=c(19,NA,23,NA), lwd=c(NA,2.5,NA,1),
+       pt.bg=c(NA,NA,"#27ae60",NA), bty="n")
+```
+
+## Regresión múltiple y no lineal
+
+```{r regresion_multiple}
+# ─── REGRESIÓN CUADRÁTICA (NO LINEAL) ────────────────────────
+X2 <- c(1, 2, 3, 4, 5, 6, 7)
+Y2 <- c(3, 8, 15, 24, 35, 48, 63)
+
+# Ajuste cuadrático
+fit_cuad <- lm(Y2 ~ poly(X2, 2, raw=TRUE))
+coef_cuad <- coef(fit_cuad)
+
+cat("════════════════════════════════════════\n")
+cat("  REGRESIÓN CUADRÁTICA (NO LINEAL)\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  Ŷ = %.4f + %.4f·X + %.4f·X²\n",
+            coef_cuad[1], coef_cuad[2], coef_cuad[3]))
+cat(sprintf("  R² = %.4f\n", summary(fit_cuad)$r.squared))
+cat("════════════════════════════════════════\n")
+
+# ─── REGRESIÓN MÚLTIPLE ───────────────────────────────────────
+# Ejemplo: Y depende de X1 y X2
+X1_m <- c(10, 20, 30, 40, 50, 60, 70)
+X2_m <- c(5,  8, 12, 14, 18, 20, 25)
+Y_m  <- c(22, 38, 58, 74, 92, 110, 135)
+
+fit_mult <- lm(Y_m ~ X1_m + X2_m)
+coef_m   <- coef(fit_mult)
+
+cat("════════════════════════════════════════\n")
+cat("  REGRESIÓN MÚLTIPLE: Y = a + b₁X₁ + b₂X₂\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  a  = %.4f\n", coef_m[1]))
+cat(sprintf("  b₁ = %.4f (coef. de X₁)\n", coef_m[2]))
+cat(sprintf("  b₂ = %.4f (coef. de X₂)\n", coef_m[3]))
+cat(sprintf("  R² = %.4f\n", summary(fit_mult)$r.squared))
+cat(sprintf("  R ajustado = %.4f\n", summary(fit_mult)$adj.r.squared))
+cat("════════════════════════════════════════\n")
+```
+
+---
+
+# MUESTREO ESTADÍSTICO
+
+## Tipos de muestreo
+
+## Muestreo aleatorio simple
+
+```{r muestreo_simple}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+N_pob <- 500   # Tamaño de la población
+n_mues <- 50   # Tamaño de la muestra
+semilla <- 42  # Semilla para reproducibilidad
+
+set.seed(semilla)
+muestra_simple <- sort(sample(1:N_pob, n_mues))
+
+cat("════════════════════════════════════════\n")
+cat("  MUESTREO ALEATORIO SIMPLE\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  N = %d | n = %d | f = n/N = %.4f\n",
+            N_pob, n_mues, n_mues/N_pob))
+cat("  Elementos seleccionados:\n")
+cat(paste(muestra_simple, collapse=", "), "\n")
+cat("════════════════════════════════════════\n")
+```
+
+## Muestreo estratificado proporcional
+
+```{r muestreo_estratificado}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+n_total_est  <- 100  # Muestra total deseada
+estratos_nom <- c("Estrato A", "Estrato B", "Estrato C")
+N_estratos   <- c(200, 350, 150)  # Tamaño de cada estrato
+
+N_pob_est <- sum(N_estratos)
+n_i <- round(n_total_est * N_estratos / N_pob_est)
+
+df_est <- data.frame(
+  Estrato = estratos_nom,
+  "Nᵢ (Población)" = N_estratos,
+  "Proporción Nᵢ/N" = round(N_estratos/N_pob_est, 4),
+  "nᵢ (Muestra)" = n_i,
+  check.names = FALSE
+)
+
+cat("════════════════════════════════════════\n")
+cat("  MUESTREO ESTRATIFICADO PROPORCIONAL\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  N_total = %d | n_total = %d\n", N_pob_est, n_total_est))
+cat(sprintf("  Fórmula: nᵢ = n_total × Nᵢ/N\n"))
+cat("════════════════════════════════════════\n")
+knitr::kable(df_est, caption="Distribución de la muestra por estratos")
+```
+
+## Muestreo sistemático
+
+```{r muestreo_sistematico}
+# ─── PARÁMETROS — modifique aquí ─────────────────────────────
+N_sist  <- 200   # Tamaño población
+n_sist  <- 20    # Tamaño muestra
+k0_sist <- 3     # Punto de inicio
+
+k_intervalo <- floor(N_sist / n_sist)
+elementos_sist <- seq(k0_sist, by=k_intervalo, length.out=n_sist)
+elementos_sist <- elementos_sist[elementos_sist <= N_sist]
+
+cat("════════════════════════════════════════\n")
+cat("  MUESTREO SISTEMÁTICO\n")
+cat("════════════════════════════════════════\n")
+cat(sprintf("  N=%d | n=%d | k=N/n=%d | k₀=%d\n",
+            N_sist, n_sist, k_intervalo, k0_sist))
+cat(sprintf("  Patrón: k₀, k₀+k, k₀+2k, ...\n"))
+cat("  Elementos seleccionados:\n")
+cat(paste(elementos_sist, collapse=", "), "\n")
+cat("════════════════════════════════════════\n")
+```
+
+## Determinación del tamaño de muestra
+
+```{r tamano_muestra}
+# ─── PARA ESTIMAR UNA MEDIA ───────────────────────────────────
+sigma_tm  <- 15    # Desviación estándar estimada
+E_media   <- 3     # Error máximo tolerable
+alfa_tm   <- 0.05  # Nivel de significación
+Z_tm      <- qnorm(1 - alfa_tm/2)
+n_media_calc <- ceiling((Z_tm * sigma_tm / E_media)^2)
+
+# ─── PARA ESTIMAR UNA PROPORCIÓN ─────────────────────────────
+p_tm  <- 0.5    # Proporción estimada (0.5 = máxima varianza)
+q_tm  <- 1 - p_tm
+E_prop <- 0.05   # Error máximo tolerable
+alfa_p <- 0.05
+Z_tp   <- qnorm(1 - alfa_p/2)
+n_prop_calc <- ceiling(Z_tp^2 * p_tm * q_tm / E_prop^2)
+
+cat("════════════════════════════════════════\n")
+cat("  DETERMINACIÓN DEL TAMAÑO DE MUESTRA\n")
+cat("════════════════════════════════════════\n")
+cat("  PARA ESTIMAR UNA MEDIA:\n")
+cat(sprintf("  n = (Z·σ/E)² = (%.4f·%.4f/%.4f)²\n", Z_tm, sigma_tm, E_media))
+cat(sprintf("  n = %.2f → n = %d\n", (Z_tm*sigma_tm/E_media)^2, n_media_calc))
+cat("────────────────────────────────────────\n")
+cat("  PARA ESTIMAR UNA PROPORCIÓN:\n")
+cat(sprintf("  n = Z²·p·q/E² = %.4f²·%.2f·%.2f/%.4f²\n",
+            Z_tp, p_tm, q_tm, E_prop))
+cat(sprintf("  n = %.2f → n = %d\n",
+            Z_tp^2*p_tm*q_tm/E_prop^2, n_prop_calc))
+cat("════════════════════════════════════════\n")
+```
+
+## Gráfico: relación Error vs Tamaño de muestra
+
+```{r graf_tamano}
+E_rango <- seq(E_media*0.3, E_media*4, length.out=100)
+n_rango <- ceiling((Z_tm * sigma_tm / E_rango)^2)
+
+plot(E_rango, n_rango, type="l", lwd=2.5, col="#1a3a5c",
+     main="Relación entre Error máximo tolerable y Tamaño de muestra",
+     xlab="Error máximo tolerable (E)", ylab="Tamaño de muestra (n)", las=1)
+abline(v=E_media, col="#e74c3c", lty=2, lwd=1.5)
+abline(h=n_media_calc, col="#e74c3c", lty=2, lwd=1.5)
+points(E_media, n_media_calc, pch=19, col="#e74c3c", cex=2)
+text(E_media*1.1, n_media_calc*1.05,
+     paste0("E=",E_media,"\nn=",n_media_calc),
+     col="#e74c3c", font=2, cex=0.9)
+grid()
+```
+
+---
+
+# TABLAS DE REFERENCIA
+
+```{r tablas_ref}
+# ─── TABLA DE VALORES CRÍTICOS Z ──────────────────────────────
+alfas_ref <- c(0.10, 0.05, 0.025, 0.01, 0.005)
+tab_z <- data.frame(
+  "α (bilateral)" = c(0.20,0.10,0.05,0.02,0.01),
+  "α/2" = alfas_ref,
+  "Z_α (cola derecha)" = round(qnorm(1-alfas_ref),4),
+  "±Z_α/2 (bilateral)" = round(qnorm(1-alfas_ref/2),4),
+  check.names=FALSE
+)
+knitr::kable(tab_z, caption="Valores críticos Z más usados")
+
+# ─── TABLA DE VALORES CRÍTICOS CHI-CUADRADO ───────────────────
+gls_ref <- 1:15
+tab_chi <- data.frame(
+  gl = gls_ref,
+  "χ²_0.10" = round(qchisq(0.90,gls_ref),3),
+  "χ²_0.05" = round(qchisq(0.95,gls_ref),3),
+  "χ²_0.025"= round(qchisq(0.975,gls_ref),3),
+  "χ²_0.01" = round(qchisq(0.99,gls_ref),3),
+  "χ²_0.005"= round(qchisq(0.995,gls_ref),3),
+  check.names=FALSE
+)
+knitr::kable(tab_chi, caption="Valores críticos χ² por grados de libertad")
+
+# ─── TABLA DE VALORES t ───────────────────────────────────────
+gls_t <- c(5,10,15,20,25,30,40,60,120,200)
+tab_t <- data.frame(
+  gl = gls_t,
+  "t_0.10" = round(qt(0.90, gls_t),4),
+  "t_0.05" = round(qt(0.95, gls_t),4),
+  "t_0.025"= round(qt(0.975,gls_t),4),
+  "t_0.01" = round(qt(0.99, gls_t),4),
+  check.names=FALSE
+)
+knitr::kable(tab_t, caption="Valores críticos t de Student")
+```
+
+---
+
+*Propuesta Aplicativa — IS-241 Estadística Inferencial | UNADECA | 2026*
