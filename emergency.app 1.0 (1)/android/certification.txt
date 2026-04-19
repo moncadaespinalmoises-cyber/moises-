@@ -1,0 +1,24 @@
+---------------------------------------------------
+Here are the ownership and the certification details
+of the emergency.app 1.0
+---------------------------------------------------
+
+app_name - 						emergency.app
+app_alias - 					emergencyapp
+app_author_name - 				My Company
+app_author_organizational - 	My Company
+app_author_organization - 		My Company
+app_author_locality - 			My Company
+app_author_state - 				Alajuela
+app_author_country - 			Costa Rica
+app_password - 					Rth7DIdGyDnP
+app_versionName - 				versionName "1.0"
+app_versionCode - 				100
+
+---------------------------------------------------
+The certification was created by WebIntoApp.com at
+the Thursday 14th of August 2025 11:42:40 AM
+
+https://webintoapp.com
+---------------------------------------------------
+
