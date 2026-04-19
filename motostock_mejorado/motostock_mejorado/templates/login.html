@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MotoStock</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+
+    <div class="login-layout">
+        <div class="login-hero">
+            <h2>Controla tu inventario de repuestos</h2>
+            <p>Le agregamos más color e imágenes al sistema para que se vea moderno, pero sin mover la estructura que ya tenías.</p>
+            <div class="login-tags">
+                <span>Dashboard visual</span>
+                <span>Inventario ordenado</span>
+                <span>Alertas rápidas</span>
+            </div>
+            <div class="login-hero-image">
+                <img src="{{ url_for('static', filename='images/login-hero.svg') }}" alt="Vista ilustrativa de MotoStock">
+            </div>
+        </div>
+
+        <div class="login-box">
+            <h1>MotoStock</h1>
+            <p>Iniciar sesión</p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-message">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('ingresar') }}" method="POST">
+                <input type="text" name="correo" placeholder="Correo electrónico">
+                <input type="password" name="password" placeholder="Contraseña">
+                <button type="submit">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

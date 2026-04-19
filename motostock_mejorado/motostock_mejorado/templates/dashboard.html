@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MotoStock</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+
+    <div class="dashboard-container">
+
+        <div class="top-bar">
+            <div>
+                <h1>MotoStock</h1>
+                <p class="subtitulo">Panel principal del sistema</p>
+            </div>
+
+            <div class="menu-links">
+                <a href="/inventario" class="menu-btn">Inventario</a>
+                <a href="/agregar-producto" class="menu-btn">Agregar producto</a>
+                <a href="/alertas" class="menu-btn">Alertas</a>
+            </div>
+        </div>
+
+        <section class="hero-banner">
+            <div>
+                <h2>Bienvenido al panel de control</h2>
+                <p>Aquí puedes ver el estado general del inventario, revisar productos recientes y detectar alertas de stock con una vista más atractiva y clara.</p>
+            </div>
+            <div class="hero-image">
+                <img src="{{ url_for('static', filename='images/dashboard-banner.svg') }}" alt="Banner del dashboard">
+            </div>
+        </section>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Total de productos</h3>
+                <p>{{ total_productos }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Stock bajo</h3>
+                <p>{{ stock_bajo }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Valor del inventario</h3>
+                <p>₡{{ "{:,.2f}".format(valor_inventario) }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Categorías</h3>
+                <p>{{ categorias }}</p>
+            </div>
+        </div>
+
+        <div class="double-grid">
+            <div class="panel-card">
+                <h2>Alertas recientes</h2>
+
+                {% if alertas_recientes %}
+                    <div class="mini-list">
+                        {% for producto in alertas_recientes %}
+                            <div class="mini-item warning-item">
+                                <strong>{{ producto["nombre"] }}</strong>
+                                <span>{{ producto["marca"] }} - {{ producto["modelo_moto"] }}</span>
+                                <small>Stock: {{ producto["stock"] }} / Mínimo: {{ producto["stock_minimo"] }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-text">No hay productos con stock bajo.</p>
+                {% endif %}
+            </div>
+
+            <div class="panel-card">
+                <h2>Últimos productos agregados</h2>
+
+                {% if productos_recientes %}
+                    <div class="mini-list">
+                        {% for producto in productos_recientes %}
+                            <div class="mini-item">
+                                <strong>{{ producto["nombre"] }}</strong>
+                                <span>{{ producto["categoria"] }} - {{ producto["marca"] }}</span>
+                                <small>Código: {{ producto["codigo"] }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-text">Todavía no has agregado productos.</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

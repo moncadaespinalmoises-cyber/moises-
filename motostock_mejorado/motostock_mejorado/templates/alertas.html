@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alertas - MotoStock</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+
+    <div class="dashboard-container">
+        <div class="top-bar">
+            <div>
+                <h1>Alertas de inventario</h1>
+                <p class="subtitulo">Productos con stock bajo o agotado</p>
+            </div>
+
+            <div class="menu-links">
+                <a href="/dashboard" class="menu-btn secondary-btn">Volver</a>
+            </div>
+        </div>
+
+        <div class="page-banner">
+            <img src="{{ url_for('static', filename='images/alerts-banner.svg') }}" alt="Banner de alertas">
+        </div>
+
+        <div class="alerts-container">
+            {% if productos_alerta %}
+                {% for producto in productos_alerta %}
+                    <div class="alert-card {% if producto['stock'] == 0 %}out{% else %}warning{% endif %}">
+                        <h3>{{ producto["nombre"] }}</h3>
+                        <p><strong>Código:</strong> {{ producto["codigo"] }}</p>
+                        <p><strong>Marca:</strong> {{ producto["marca"] }}</p>
+                        <p><strong>Moto:</strong> {{ producto["modelo_moto"] }}</p>
+                        <p><strong>Stock actual:</strong> {{ producto["stock"] }}</p>
+                        <p><strong>Stock mínimo:</strong> {{ producto["stock_minimo"] }}</p>
+
+                        {% if producto["stock"] == 0 %}
+                            <span class="alert-badge">Agotado</span>
+                        {% else %}
+                            <span class="alert-badge">Stock bajo</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="panel-card">
+                    <p class="empty-text">No hay alertas en este momento.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

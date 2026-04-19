@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - MotoStock</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+
+    <div class="dashboard-container">
+        <div class="top-bar">
+            <div>
+                <h1>Inventario</h1>
+                <p class="subtitulo">Lista de productos registrados</p>
+            </div>
+
+            <div class="menu-links">
+                <a href="/dashboard" class="menu-btn secondary-btn">Dashboard</a>
+                <a href="/agregar-producto" class="menu-btn">Agregar producto</a>
+            </div>
+        </div>
+
+        <div class="page-banner">
+            <img src=https://images.openai.com/static-rsc-4/bn1_3Gt3nSBL4a_6933Frj-LQxriZw1SnC_WW_VKKiBvYxZ5byc3X1Ao2H3wyiVnkE3wi4Vg20aloVCLUd4TJ0SlJkzoi4PMl1NqzRPAohlsTGct51VNR2YHL4nhuTqgssISgQE70oYr4brFhaAek1N6Ly-sqP3kcOvyvEm65QA0j_GYxnSPMmwapyblFAWJ?purpose=fullsize alt="Banner de inventario">
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-message inside-page">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="table-card">
+            <form method="GET" action="{{ url_for('inventario') }}" class="table-actions">
+                <input type="text" name="q" class="search-input" placeholder="Buscar por nombre, código, marca..." value="{{ busqueda }}">
+                <button type="submit" class="menu-btn">Buscar</button>
+            </form>
+
+            <div class="table-responsive">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Marca</th>
+                            <th>Moto</th>
+                            <th>Stock</th>
+                            <th>Stock mínimo</th>
+                            <th>Precio venta</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if productos %}
+                            {% for producto in productos %}
+                                <tr>
+                                    <td>{{ producto["codigo"] }}</td>
+                                    <td>{{ producto["nombre"] }}</td>
+                                    <td>{{ producto["categoria"] }}</td>
+                                    <td>{{ producto["marca"] }}</td>
+                                    <td>{{ producto["modelo_moto"] }}</td>
+                                    <td>{{ producto["stock"] }}</td>
+                                    <td>{{ producto["stock_minimo"] }}</td>
+                                    <td>₡{{ "{:,.2f}".format(producto["precio_venta"]) }}</td>
+                                    <td>
+                                        <form action="{{ url_for('eliminar_producto', producto_id=producto['id']) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar este producto?');">
+                                            <button type="submit" class="delete-btn">Eliminar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="empty-row">No hay productos registrados.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

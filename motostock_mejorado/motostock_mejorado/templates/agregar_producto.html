@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar producto - MotoStock</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+
+    <div class="dashboard-container">
+        <div class="top-bar">
+            <div>
+                <h1>Agregar producto</h1>
+                <p class="subtitulo">Registra un nuevo repuesto</p>
+            </div>
+
+            <div class="menu-links">
+                <a href="/dashboard" class="menu-btn secondary-btn">Volver</a>
+            </div>
+        </div>
+
+        <div class="page-banner">
+            <img src="{{ url_for('static', filename='images/form-banner.svg') }}" alt="Banner de agregar producto">
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-message inside-page">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-card">
+            <form action="{{ url_for('agregar_producto') }}" method="POST" class="product-form">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Código</label>
+                        <input type="text" name="codigo" placeholder="Ej: REP001">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombre del repuesto</label>
+                        <input type="text" name="nombre" placeholder="Ej: Pastillas de freno">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <input type="text" name="categoria" placeholder="Ej: Frenos">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" name="marca" placeholder="Ej: Honda">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Moto compatible</label>
+                        <input type="text" name="modelo_moto" placeholder="Ej: XR 150">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Precio de compra</label>
+                        <input type="number" step="0.01" name="precio_compra" placeholder="Ej: 4500">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Precio de venta</label>
+                        <input type="number" step="0.01" name="precio_venta" placeholder="Ej: 6500">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Stock actual</label>
+                        <input type="number" name="stock" placeholder="Ej: 10">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Stock mínimo</label>
+                        <input type="number" name="stock_minimo" placeholder="Ej: 3">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" rows="4" placeholder="Descripción del repuesto"></textarea>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="menu-btn">Guardar producto</button>
+                    <a href="/inventario" class="menu-btn secondary-btn">Ir a inventario</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
